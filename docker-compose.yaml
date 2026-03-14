@@ -1,29 +1,36 @@
 services:
   db:
     image: mariadb:latest
+    container_name: db
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - db_data:/var/lib/mysql
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: example_root_password
-      MYSQL_DATABASE: wordpress
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/mariadb_root_password
+      MYSQL_DATABASE: wordpress_db
       MYSQL_USER: wordpress_user
-      MYSQL_PASSWORD: example_password
+      MYSQL_PASSWORD_FILE: /run/secrets/wordpress_db_password
+    secrets:
+      - mariadb_root_password
+      - wordpress_db_password
 
   wordpress:
     image: wordpress:latest
+    container_name: wordpress
     depends_on:
       - db
     restart: always
     environment:
       WORDPRESS_DB_HOST: db
       WORDPRESS_DB_USER: wordpress_user
-      WORDPRESS_DB_PASSWORD: example_password
-      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_DB_PASSWORD_FILE: /run/secrets/wordpress_db_password
+      WORDPRESS_DB_NAME: wordpress_db
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - wordpress_data:/var/www/html
+    secrets:
+      - wordpress_db_password
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.wordpress.rule=Host(`wordpress.local`)"
@@ -33,13 +40,14 @@ services:
 
   phpmyadmin:
     image: phpmyadmin:latest
+    container_name: phpmyadmin
     depends_on:
       - db
     restart: always
     environment:
       PMA_HOST: db
       PMA_PORT: 3306
-      MYSQL_ROOT_PASSWORD: example_root_password
+      MYSQL_ROOT_PASSWORD: example_root_password # TODO
     volumes:
       - /etc/localtime:/etc/localtime:ro
     labels:
@@ -51,6 +59,7 @@ services:
 
   traefik:
     image: traefik:latest
+    container_name: traefik
     command:
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
@@ -75,3 +84,9 @@ volumes:
   db_data:
   wordpress_data:
   letsencrypt:
+
+secrets:
+  mariadb_root_password:
+    file: ./secrets/mariadb_root_password
+  wordpress_db_password:
+    file: ./secrets/wordpress_db_password
