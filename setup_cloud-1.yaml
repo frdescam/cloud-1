@@ -5,16 +5,26 @@
   tasks:
     - name: Update package cache and upgrade all packages
       apt:
-        update_cache: yes
+        update_cache: true
         upgrade: dist
+        autoremove: true
+        clean: true
 
     - name: Install prerequisites
       apt:
         name:
           - ca-certificates
           - curl
-        state: present
-        update_cache: yes
+          - ufw
+        state: latest
+
+    - name: Configure UFW
+      ufw:
+        default: deny
+        rule: allow
+        proto: tcp
+        port: 22,80,443
+        state: enabled
 
     - name: Create keyrings directory
       file:
@@ -43,13 +53,10 @@
           Signed-By: /etc/apt/keyrings/docker.asc
         dest: /etc/apt/sources.list.d/docker.sources
         mode: '0644'
-      register: docker_repo
 
     - name: Force apt update after repo change
-      apt:
-        update_cache: yes
-        cache_valid_time: 0
-      when: docker_repo.changed
+      shell:
+        cmd: apt update
 
     - name: Install Docker packages
       apt:
@@ -79,7 +86,7 @@
       file:
         path: /home/{{ ansible_user }}/secrets
         state: directory
-        mode: 0600
+        mode: 0400
 
     - name: Deploy mariadb root password
       copy:
