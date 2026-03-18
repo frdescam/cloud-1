@@ -1,7 +1,36 @@
 services:
+  traefik:
+    image: traefik:latest
+    container_name: traefik
+    networks:
+      - traefik_wordpress
+      - traefik_phpmyadmin
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      # - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      # - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      - "--entrypoints.websecure.address=:443"
+      # - "--certificatesresolvers.myresolver.acme.httpchallenge=true"
+      # - "--certificatesresolvers.myresolver.acme.httpchallenge.entrypoint=web"
+      # - "--certificatesresolvers.myresolver.acme.email=your@email.com"
+      # - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "letsencrypt:/letsencrypt"
+    restart: always
+
   db:
     image: mariadb:latest
     container_name: db
+    networks:
+      - db_wordpress
+      - db_phpmyadmin
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - db_data:/var/lib/mysql
@@ -20,6 +49,9 @@ services:
     container_name: wordpress
     depends_on:
       - db
+    networks:
+      - traefik_wordpress
+      - db_wordpress
     restart: always
     environment:
       WORDPRESS_DB_HOST: db
@@ -43,11 +75,13 @@ services:
     container_name: phpmyadmin
     depends_on:
       - db
+    networks:
+      - traefik_phpmyadmin
+      - db_wordpress
     restart: always
     environment:
       PMA_HOST: db
       PMA_PORT: 3306
-      MYSQL_ROOT_PASSWORD: example_root_password # TODO
     volumes:
       - /etc/localtime:/etc/localtime:ro
     labels:
@@ -57,33 +91,16 @@ services:
       - "traefik.http.routers.phpmyadmin.tls.certresolver=myresolver"
       - "traefik.http.services.phpmyadmin.loadbalancer.server.port=80"
 
-  traefik:
-    image: traefik:latest
-    container_name: traefik
-    command:
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--entrypoints.web.address=:80"
-      # - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
-      # - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
-      - "--entrypoints.websecure.address=:443"
-      # - "--certificatesresolvers.myresolver.acme.httpchallenge=true"
-      # - "--certificatesresolvers.myresolver.acme.httpchallenge.entrypoint=web"
-      # - "--certificatesresolvers.myresolver.acme.email=your@email.com"
-      # - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - /etc/localtime:/etc/localtime:ro
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
-      - "letsencrypt:/letsencrypt"
-    restart: always
-
 volumes:
   db_data:
   wordpress_data:
   letsencrypt:
+
+networks:
+  traefik_wordpress:
+  traefik_phpmyadmin:
+  db_wordpress:
+  db_phpmyadmin:
 
 secrets:
   mariadb_root_password:
