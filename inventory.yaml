@@ -1,10 +1,10 @@
 webservers:
   hosts:
-    fish:
+    wordpress.ltouret.dev:
       ansible_user: "{{ ansible_user }}"
       ansible_port: "{{ ansible_port }}"
       ansible_become_pass: "{{ ansible_become_pass }}"
-    cat:
+    wordpress.fdec.dev:
       ansible_user: "{{ ansible_user }}"
       ansible_port: "{{ ansible_port }}"
       ansible_become_pass: "{{ ansible_become_pass }}"
