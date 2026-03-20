@@ -43,7 +43,7 @@
         path: /etc/apt/keyrings/docker.asc
         mode: 'a+r'
 
-    - name: Add Docker official repository (modern deb822 format)
+    - name: Add Docker official repository
       copy:
         content: |
           Types: deb
@@ -54,9 +54,10 @@
         dest: /etc/apt/sources.list.d/docker.sources
         mode: '0644'
 
-    - name: Force apt update after repo change
-      shell:
-        cmd: apt update
+    - name: Update apt cache after adding Docker repo
+      apt:
+        update_cache: true
+      changed_when: false
 
     - name: Install Docker packages
       apt:
