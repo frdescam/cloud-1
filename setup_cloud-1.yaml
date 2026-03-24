@@ -83,6 +83,18 @@
         group: "{{ ansible_user }}"
         mode: "0644"
 
+    - name: Replace Traefik Host rule for wordpress
+      ansible.builtin.replace:
+        path: /home/{{ ansible_user }}/docker-compose.yaml
+        regexp: 'traefik\.http\.routers\.wordpress\.rule=Host\(`[^`]+`\)'
+        replace: 'traefik.http.routers.wordpress.rule=Host(`{{ wordpress_domain }}`)'
+
+    - name: Replace Traefik Host rule for phpmyadmin
+      ansible.builtin.replace:
+        path: /home/{{ ansible_user }}/docker-compose.yaml
+        regexp: 'traefik\.http\.routers\.phpmyadmin\.rule=Host\(`[^`]+`\)'
+        replace: 'traefik.http.routers.phpmyadmin.rule=Host(`{{ phpmyadmin_domain }}`)'
+
     - name: Create secrets dir
       file:
         path: /home/{{ ansible_user }}/secrets
