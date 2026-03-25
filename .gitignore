@@ -1,1 +1,4 @@
 .vault_pass
+.env/
+cloud-1_key
+cloud-1_key.pub
